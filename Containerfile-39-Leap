@@ -1,0 +1,11 @@
+FROM registry.opensuse.org/opensuse/leap:15.3
+
+RUN zypper --non-interactive install python39 python39-devel python39-pip
+RUN python3.9 -m pip install pyperformance
+
+WORKDIR /pyperformance
+RUN pyperformance venv create --venv venv
+
+
+VOLUME /benchmarks
+ENTRYPOINT pyperformance run --venv venv --python=venv/bin/python -o /benchmarks/leap-$(venv/bin/python --version | awk '{print $2}').json

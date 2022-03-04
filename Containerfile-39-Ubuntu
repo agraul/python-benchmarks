@@ -1,0 +1,18 @@
+FROM docker.io/ubuntu:21.10
+
+# needed for non-interactive installation of pip, tzdata prompts for input
+# without this. See also
+# https://dev.to/setevoy/docker-configure-tzdata-and-timezone-during-build-20bk
+ENV TZ=Europe/Berlin
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apt-get update && apt-get -y upgrade && \
+  apt-get install -y python3-dev python3-pip
+
+RUN python3 -m pip install pyperformance
+
+WORKDIR /pyperformance
+RUN pyperformance venv create --venv venv
+
+
+VOLUME /benchmarks
+ENTRYPOINT pyperformance run --venv venv --python=venv/bin/python -o /benchmarks/ubuntu-$(venv/bin/python --version | awk '{print $2}').json
