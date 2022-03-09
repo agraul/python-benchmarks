@@ -1,0 +1,27 @@
+FROM registry.opensuse.org/opensuse/leap:15.3
+
+RUN zypper --non-interactive addrepo \
+ https://download.opensuse.org/repositories/home:/agraul:/bundle-benchmarks/15.0/home:agraul:bundle-benchmarks.repo
+RUN zypper --gpg-auto-import-keys --non-interactive install venv-salt-minion curl
+RUN /usr/lib/venv-salt-minion/bin/python -m pip install pyperformance
+
+# Needed to use the venv-salt-minion Python interpreter in pyperformance's new venv
+# HACK -- begin --
+ENV LD_LIBRARY_PATH=/usr/lib/venv-salt-minion/lib
+ENV PYTHONPATH=/usr/lib/venv-salt-minion/local/lib/python3.9/site-packages/
+RUN sed -i "s/'venv', '--without-pip'/\0, '--copies'/"  /usr/lib/venv-salt-minion/local/lib/python3.9/site-packages/pyperformance/venv.py
+RUN sed -i "/.*PYTHONHOME.*/d" /usr/lib/venv-salt-minion/bin/venv-exec.py
+# HACK -- end --
+
+
+WORKDIR /pyperformance
+RUN /usr/lib/venv-salt-minion/local/bin/pyperformance venv create \
+    --venv venv \
+    --inherit-environ LD_LIBRARY_PATH
+
+
+VOLUME /benchmarks
+ENTRYPOINT /usr/lib/venv-salt-minion/local/bin/pyperformance run \
+    --venv venv \
+    --inherit-environ LD_LIBRARY_PATH \
+    -o /benchmarks/leap-$(venv/bin/python --version | awk '{print $2}')-bundle.json
