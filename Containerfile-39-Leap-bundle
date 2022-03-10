@@ -11,6 +11,8 @@ ENV LD_LIBRARY_PATH=/usr/lib/venv-salt-minion/lib
 ENV PYTHONPATH=/usr/lib/venv-salt-minion/local/lib/python3.9/site-packages/
 RUN sed -i "s/'venv', '--without-pip'/\0, '--copies'/"  /usr/lib/venv-salt-minion/local/lib/python3.9/site-packages/pyperformance/venv.py
 RUN sed -i "/.*PYTHONHOME.*/d" /usr/lib/venv-salt-minion/bin/venv-exec.py
+# https://github.com/python/pyperformance/issues/139
+RUN sed -i "s/\[-2\]/[-1]/"  /usr/lib/venv-salt-minion/local/lib/python3.9/site-packages/pyperformance/_benchmark.py
 # HACK -- end --
 
 
