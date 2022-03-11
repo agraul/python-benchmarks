@@ -26,4 +26,4 @@ VOLUME /benchmarks
 ENTRYPOINT /usr/lib/venv-salt-minion/local/bin/pyperformance run \
     --venv venv \
     --inherit-environ LD_LIBRARY_PATH \
-    -o /benchmarks/leap-$(venv/bin/python --version | awk '{print $2}')-bundle.json
+    -o /benchmarks/results/leap-$(date -Iseconds)-$(venv/bin/python --version | awk '{print $2}')-bundle.json

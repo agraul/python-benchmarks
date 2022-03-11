@@ -8,4 +8,4 @@ RUN pyperformance venv create --venv venv
 
 
 VOLUME /benchmarks
-ENTRYPOINT pyperformance run --venv venv --python=venv/bin/python -o /benchmarks/tw-$(venv/bin/python --version | awk '{print $2}').json
+ENTRYPOINT pyperformance run --venv venv --python=venv/bin/python -o /benchmarks/results/tw-$(date -Iseconds)-$(venv/bin/python --version | awk '{print $2}').json
