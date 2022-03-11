@@ -1,0 +1,43 @@
+FROM docker.io/ubuntu:20.04
+
+# needed for non-interactive installation of pip, tzdata prompts for input
+# without this. See also
+# https://dev.to/setevoy/docker-configure-tzdata-and-timezone-during-build-20bk
+ENV TZ=Europe/Berlin
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install Salt Bundle
+RUN apt-get update && apt-get -y upgrade && apt-get install -y curl gpg
+RUN echo 'deb http://download.opensuse.org/repositories/systemsmanagement:/saltstack:/bundle:/Ubuntu2004/Ubuntu_20.04/ /' \
+    >/etc/apt/sources.list.d/systemsmanagement:saltstack:bundle:Ubuntu2004.list
+RUN curl -fsSL https://download.opensuse.org/repositories/systemsmanagement:saltstack:bundle:Ubuntu2004/Ubuntu_20.04/Release.key \
+    | gpg --dearmor >/etc/apt/trusted.gpg.d/systemsmanagement_saltstack_bundle_Ubuntu2004.gpg
+RUN apt-get update && apt-get -y upgrade && apt-get install -y venv-salt-minion
+
+# Install PIP
+RUN curl -sSL https://bootstrap.pypa.io/get-pip.py | /usr/lib/venv-salt-minion/bin/python -
+
+# Install pyperformance
+ENV LD_LIBRARY_PATH=/usr/lib/venv-salt-minion/lib
+ENV PYTHONPATH=/usr/lib/venv-salt-minion/local/lib/python3.9/site-packages/
+RUN /usr/lib/venv-salt-minion/local/bin/pip install pyperformance
+
+# Needed to use the venv-salt-minion Python interpreter in pyperformance's new venv
+# HACK -- begin --
+RUN sed -i "s/'venv', '--without-pip'/\0, '--copies'/"  /usr/lib/venv-salt-minion/local/lib/python3.9/site-packages/pyperformance/venv.py
+RUN sed -i "/.*PYTHONHOME.*/d" /usr/lib/venv-salt-minion/bin/venv-exec.py
+# https://github.com/python/pyperformance/issues/139
+RUN sed -i "s/\[-2\]/[-1]/"  /usr/lib/venv-salt-minion/local/lib/python3.9/site-packages/pyperformance/_benchmark.py
+# HACK -- end --
+
+WORKDIR /pyperformance
+RUN /usr/lib/venv-salt-minion/local/bin/pyperformance venv create \
+    --venv venv \
+    --inherit-environ LD_LIBRARY_PATH
+
+
+VOLUME /benchmarks
+ENTRYPOINT /usr/lib/venv-salt-minion/local/bin/pyperformance run \
+    --venv venv \
+    --inherit-environ LD_LIBRARY_PATH \
+    -o /benchmarks/ubuntu-$(venv/bin/python --version | awk '{print $2}')-bundle.json
